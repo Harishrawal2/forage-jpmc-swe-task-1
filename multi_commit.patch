@@ -1,0 +1,166 @@
+From 879221fec2b863d37d5b493f02a530a8098ef6ef Mon Sep 17 00:00:00 2001
+From: Joe Ferrer <joe@theforage.com>
+Date: Wed, 1 Mar 2023 00:11:51 +1100
+Subject: [PATCH 1/3] Re-add sample unit test
+
+---
+ client_test.py | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+ create mode 100644 client_test.py
+
+diff --git a/client_test.py b/client_test.py
+new file mode 100644
+index 0000000..af2bf26
+--- /dev/null
++++ b/client_test.py
+@@ -0,0 +1,25 @@
++import unittest
++from client3 import getDataPoint
++
++class ClientTest(unittest.TestCase):
++  def test_getDataPoint_calculatePrice(self):
++    quotes = [
++      {'top_ask': {'price': 121.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
++      {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
++    ]
++    """ ------------ Add the assertion below ------------ """
++
++  def test_getDataPoint_calculatePriceBidGreaterThanAsk(self):
++    quotes = [
++      {'top_ask': {'price': 119.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
++      {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
++    ]
++    """ ------------ Add the assertion below ------------ """
++
++
++  """ ------------ Add more unit tests ------------ """
++
++
++
++if __name__ == '__main__':
++    unittest.main()
+-- 
+2.41.0.windows.3
+
+
+From 7395e6693d566807a247543cbed88dbcc0a5fe4a Mon Sep 17 00:00:00 2001
+From: Harishrawal2 <harishrawal703@gmail.com>
+Date: Sun, 16 Jun 2024 10:46:29 +0530
+Subject: [PATCH 2/3] Fixed client datafeed script to correctly calculate
+ prices and ratio
+
+---
+ client3.py | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/client3.py b/client3.py
+index 3fc09b7..c89b998 100644
+--- a/client3.py
++++ b/client3.py
+@@ -35,14 +35,16 @@ def getDataPoint(quote):
+     stock = quote['stock']
+     bid_price = float(quote['top_bid']['price'])
+     ask_price = float(quote['top_ask']['price'])
+-    price = bid_price
++    price = (bid_price + ask_price)/2
+     return stock, bid_price, ask_price, price
+ 
+ 
+ def getRatio(price_a, price_b):
+     """ Get ratio of price_a and price_b """
+     """ ------------- Update this function ------------- """
+-    return 1
++    if(price_b ==0):
++        return
++    return price_a/price_b
+ 
+ 
+ # Main
+@@ -52,8 +54,10 @@ if __name__ == "__main__":
+         quotes = json.loads(urllib.request.urlopen(QUERY.format(random.random())).read())
+ 
+         """ ----------- Update to get the ratio --------------- """
++        prices = {}
+         for quote in quotes:
+             stock, bid_price, ask_price, price = getDataPoint(quote)
++            prices[stock] = price
+             print("Quoted %s at (bid:%s, ask:%s, price:%s)" % (stock, bid_price, ask_price, price))
+ 
+-        print("Ratio %s" % getRatio(price, price))
++        print("Ratio %s" % getRatio(prices["ABC"], prices["DEF"]))
+-- 
+2.41.0.windows.3
+
+
+From 75c012525c1f302f636a2aa4e42d09b1c545a787 Mon Sep 17 00:00:00 2001
+From: Harishrawal2 <harishrawal703@gmail.com>
+Date: Sun, 16 Jun 2024 10:58:24 +0530
+Subject: [PATCH 3/3] Fixed client datafeed script and added unit tests
+
+---
+ client_test.py | 44 ++++++++++++++++++++++++++++++--------------
+ 1 file changed, 30 insertions(+), 14 deletions(-)
+
+diff --git a/client_test.py b/client_test.py
+index af2bf26..bb2521e 100644
+--- a/client_test.py
++++ b/client_test.py
+@@ -1,25 +1,41 @@
+ import unittest
+-from client3 import getDataPoint
++from client3 import getDataPoint, getRatio
+ 
+ class ClientTest(unittest.TestCase):
+-  def test_getDataPoint_calculatePrice(self):
+-    quotes = [
+-      {'top_ask': {'price': 121.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
+-      {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
+-    ]
+-    """ ------------ Add the assertion below ------------ """
++    def test_getDataPoint(self):
++        quotes = [
++            {'stock': 'ABC', 'top_bid': {'price': 100}, 'top_ask': {'price': 105}},
++            {'stock': 'DEF', 'top_bid': {'price': 200}, 'top_ask': {'price': 210}},
++        ]
++        expected_results = [
++            ('ABC', 100.0, 105.0, 102.5),
++            ('DEF', 200.0, 210.0, 205.0)
++        ]
+ 
+-  def test_getDataPoint_calculatePriceBidGreaterThanAsk(self):
+-    quotes = [
+-      {'top_ask': {'price': 119.2, 'size': 36}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 120.48, 'size': 109}, 'id': '0.109974697771', 'stock': 'ABC'},
+-      {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
+-    ]
+-    """ ------------ Add the assertion below ------------ """
++        for quote, expected in zip(quotes, expected_results):
++            self.assertEqual(getDataPoint(quote), expected)
+ 
++    def test_calculatePriceBidGreaterThanAsk(self):
++        quotes = [
++            {'stock': 'ABC', 'top_bid': {'price': 105}, 'top_ask': {'price': 100}},
++            {'stock': 'DEF', 'top_bid': {'price': 210}, 'top_ask': {'price': 200}},
++        ]
++        expected_results = [
++            ('ABC', 105.0, 100.0, 102.5),
++            ('DEF', 210.0, 200.0, 205.0)
++        ]
+ 
+-  """ ------------ Add more unit tests ------------ """
++        for quote, expected in zip(quotes, expected_results):
++            self.assertEqual(getDataPoint(quote), expected)
+ 
++    def test_getRatio(self):
++        # Test normal cases
++        self.assertEqual(getRatio(100, 200), 0.5)
++        self.assertEqual(getRatio(200, 100), 2.0)
+ 
++        # Test edge cases
++        self.assertIsNone(getRatio(100, 0))  # Avoid division by zero
++        self.assertEqual(getRatio(0, 100), 0.0)
+ 
+ if __name__ == '__main__':
+     unittest.main()
+-- 
+2.41.0.windows.3
+

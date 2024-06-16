@@ -1,0 +1,61 @@
+
+### Creating the Patch File
+
+Here are the steps:
+
+1. **Open Terminal**:
+   Navigate to your project directory.
+
+2. **Stage and Commit Your Changes**:
+   Ensure your changes are committed. If not, add and commit the changes.
+
+   ```sh
+   git add client3.py client_test.py
+   git commit -m "Fixed client datafeed script and added unit tests"
+   ```
+
+3. **Generate the Patch File**:
+   If you made a single commit for all the changes:
+   ```sh
+   git format-patch -1 HEAD
+   ```
+   If you made multiple commits, replace `n` with the number of commits:
+   ```sh
+   git format-patch -n --stdout > multi_commit.patch
+   ```
+
+### Example of Creating a Patch File
+
+Here is a step-by-step example assuming you have made one commit for the changes:
+
+1. **Navigate to your project directory**:
+   ```sh
+   cd path/to/your/project
+   ```
+
+2. **Stage and commit your changes**:
+   ```sh
+   git add client3.py client_test.py
+   git commit -m "Fixed client datafeed script and added unit tests"
+   ```
+
+3. **Generate the patch file**:
+   ```sh
+   git format-patch -1 HEAD
+   ```
+
+   This will create a file named something like `0001-Fixed-client-datafeed-script-and-added-unit-tests.patch`.
+
+If you made multiple commits, for example, 3 commits:
+
+1. **Generate the patch file for multiple commits**:
+   ```sh
+   git format-patch -3 --stdout > multi_commit.patch
+   ```
+
+After executing the appropriate command, you should find the `.patch` file in your project directory. 
+
+### Upload the Patch File
+
+Locate the `.patch` file in your project directory and upload it using the file upload feature here.
+
